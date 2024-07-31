@@ -122,7 +122,7 @@ function run() {
                 core.debug("Uploading screenshots...");
                 yield Promise.all(screenshots.map((screenshot) => __awaiter(this, void 0, void 0, function* () {
                     core.debug(`Uploading ${screenshot}`);
-                    const filePath = `${workdir}\${screenshot}`;
+                    const filePath = `${workdir}/${screenshot}`;
                     const stats = (0, fs_1.statSync)(filePath);
                     const fileSizeInBytes = stats.size;
                     const { upload_url, file_id } = yield slack.files.getUploadURLExternal({

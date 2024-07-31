@@ -1,6 +1,6 @@
 {
   "name": "slack-cypress-media-uploader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Uploading the screenshots to the Slack channels if Cypress failed.",
   "main": "lib/main.js",
   "repository": "https://github.com/Cynthiafan/slack-cypress-media-uploader.git",
