@@ -22,13 +22,11 @@ async function run(): Promise<void> {
     const workflowUrl = getWorkflowInfo(context);
     const prInfo = getPrInfo(octokit, context);
 
-    const messageText =
-      core.getInput("message-text") ||
-      [
-        prInfo,
-        `The <${workflowUrl}|automation test> you triggered just failed.`,
-        "Please check the screenshots in the thread. 👇🏻",
-      ].join("\n");
+    const messageText = [
+      prInfo,
+      `The <${workflowUrl}|automation test> you triggered just failed.`,
+      "Please check the screenshots in the thread. 👇🏻",
+    ].join("\n");
 
     core.debug(`Token: ${token}`);
     core.debug(`Channels: ${channels}`);
@@ -103,13 +101,20 @@ async function run(): Promise<void> {
           const stats = statSync(filePath);
           const fileSizeInBytes = stats.size;
 
+          console.log("fileSizeInBytes :>> ", fileSizeInBytes);
+          console.log("screenshot :>> ", screenshot);
+
           const { upload_url, file_id } =
             await slack.files.getUploadURLExternal({
               filename: screenshot,
               length: fileSizeInBytes,
             });
 
-          if (!upload_url || !file_id) return;
+          if (!upload_url || !file_id) {
+            console.log("upload_url :>> ", upload_url);
+            console.log("file_id :>> ", file_id);
+            throw new Error("Could not get upload URL");
+          }
 
           const file = createReadStream(filePath);
           const form = new FormData();
