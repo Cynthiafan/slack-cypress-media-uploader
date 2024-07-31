@@ -110,15 +110,12 @@ async function run(): Promise<void> {
             });
 
           if (!upload_url || !file_id) {
-            console.log("upload_url :>> ", upload_url);
-            console.log("file_id :>> ", file_id);
             throw new Error("Could not get upload URL");
           }
 
           const file = createReadStream(filePath);
-          const form = new FormData();
 
-          await axios.post(upload_url, form, {
+          await axios.post(upload_url, file, {
             headers: { Authorization: `Bearer ${token}` },
           });
 

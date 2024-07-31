@@ -48,7 +48,6 @@ const fs_1 = __nccwpck_require__(7147);
 const walk_sync_1 = __importDefault(__nccwpck_require__(2999));
 const web_api_1 = __nccwpck_require__(431);
 const axios_1 = __importDefault(__nccwpck_require__(8757));
-const form_data_1 = __importDefault(__nccwpck_require__(4334));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -130,13 +129,10 @@ function run() {
                         length: fileSizeInBytes,
                     });
                     if (!upload_url || !file_id) {
-                        console.log("upload_url :>> ", upload_url);
-                        console.log("file_id :>> ", file_id);
                         throw new Error("Could not get upload URL");
                     }
                     const file = (0, fs_1.createReadStream)(filePath);
-                    const form = new form_data_1.default();
-                    yield axios_1.default.post(upload_url, form, {
+                    yield axios_1.default.post(upload_url, file, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     slack.files.completeUploadExternal({
