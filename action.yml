@@ -17,7 +17,6 @@ inputs:
   message-text:
     description: "The message to send"
     required: false
-    default: "🚀 <${prUrl}|${prTitle}> 🚀\nThe <${workflowUrl}|automation test> you triggered just failed.\nPlease check the screenshots in the thread. 👇🏻"
 outputs:
   result:
     description: "Result of screenshots upload"

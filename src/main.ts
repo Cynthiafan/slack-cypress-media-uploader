@@ -20,13 +20,15 @@ async function run(): Promise<void> {
     const octokit = github.getOctokit(githubToken);
 
     const workflowUrl = getWorkflowInfo(context);
-    const prInfo = getPrInfo(octokit, context);
+    const prInfo = await getPrInfo(octokit, context);
 
-    const messageText = [
-      prInfo,
-      `The <${workflowUrl}|automation test> you triggered just failed.`,
-      "Please check the screenshots in the thread. 👇🏻",
-    ].join("\n");
+    const messageText =
+      core.getInput("message-text") ||
+      [
+        prInfo,
+        `The <${workflowUrl}|automation test> you triggered just failed.`,
+        "Please check the screenshots in the thread. 👇🏻",
+      ].join("\n");
 
     core.debug(`Token: ${token}`);
     core.debug(`Channels: ${channels}`);
@@ -101,9 +103,6 @@ async function run(): Promise<void> {
           const stats = statSync(filePath);
           const fileSizeInBytes = stats.size;
 
-          console.log("fileSizeInBytes :>> ", fileSizeInBytes);
-          console.log("screenshot :>> ", screenshot);
-
           const { upload_url, file_id } =
             await slack.files.getUploadURLExternal({
               filename: screenshot,
@@ -118,8 +117,6 @@ async function run(): Promise<void> {
 
           const file = createReadStream(filePath);
           const form = new FormData();
-          form.append("filename", screenshot);
-          form.append("file", file);
 
           await axios.post(upload_url, form, {
             headers: { Authorization: `Bearer ${token}` },
