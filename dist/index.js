@@ -43,7 +43,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const github_1 = __importDefault(__nccwpck_require__(5438));
+const github = __importStar(__nccwpck_require__(5438));
 const fs_1 = __nccwpck_require__(7147);
 const walk_sync_1 = __importDefault(__nccwpck_require__(2999));
 const web_api_1 = __nccwpck_require__(431);
@@ -52,12 +52,12 @@ const form_data_1 = __importDefault(__nccwpck_require__(4334));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const context = github_1.default.context;
+            const context = github.context;
             const token = core.getInput("token");
             const channels = core.getInput("channels");
             const workdir = core.getInput("workdir") || "e2e/cypress";
             const githubToken = core.getInput("github-token");
-            const octokit = github_1.default.getOctokit(githubToken);
+            const octokit = github.getOctokit(githubToken);
             const workflowUrl = getWorkflowInfo(context);
             const prInfo = getPrInfo(octokit, context);
             const messageText = core.getInput("message-text") ||
