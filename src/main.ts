@@ -98,9 +98,9 @@ async function run(): Promise<void> {
       await Promise.all(
         screenshots.map(async (screenshot) => {
           core.debug(`Uploading ${screenshot}`);
-          const filePath = workdir + screenshot;
+          const filePath = `${workdir}\${screenshot}`;
 
-          const stats = statSync(workdir + screenshot);
+          const stats = statSync(filePath);
           const fileSizeInBytes = stats.size;
 
           const { upload_url, file_id } =
