@@ -1,0 +1,26 @@
+name: "Slack Cypress Media Uploader"
+description: "Upload the screenshots and/or videos to the Slack channels if Cypress failed."
+inputs:
+  token:
+    description: "Slack bot token"
+    required: true
+  github-token:
+    description: "GitHub token to get pull request information"
+    required: true
+  channels:
+    description: "The channels to send the message to"
+    required: true
+  workdir:
+    description: "The directory to store the screenshots"
+    required: false
+    default: "e2e/cypress"
+  message-text:
+    description: "The message to send"
+    required: false
+    default: "🚀 <${prUrl}|${prTitle}> 🚀\nThe <${workflowUrl}|automation test> you triggered just failed.\nPlease check the screenshots in the thread. 👇🏻"
+outputs:
+  result:
+    description: "Result of screenshots upload"
+runs:
+  using: "node18"
+  main: "dist/index.js"
