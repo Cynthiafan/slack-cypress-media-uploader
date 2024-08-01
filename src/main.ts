@@ -19,16 +19,11 @@ async function run(): Promise<void> {
 
     const octokit = github.getOctokit(githubToken);
 
-    const workflowUrl = getWorkflowInfo(context);
     const prInfo = await getPrInfo(octokit, context);
 
     const messageText =
       core.getInput("message-text") ||
-      [
-        prInfo,
-        `The <${workflowUrl}|automation test> you triggered just failed.`,
-        "Please check the screenshots in the thread. 👇🏻",
-      ].join("\n");
+      ":oh_no: The Cypress test in the workflow you just triggered has failed.\nPlease check the screenshots in the thread.👇🏻";
 
     core.debug(`Token: ${token}`);
     core.debug(`Channels: ${channels}`);
@@ -38,9 +33,6 @@ async function run(): Promise<void> {
     const { data: user } = await octokit.rest.users.getByUsername({
       username: actor,
     });
-
-    const userName = user.login;
-    const avatarUrl = user.avatar_url;
 
     core.debug("Start initializing slack SDK");
     const slack = new WebClient(token);
@@ -58,30 +50,19 @@ async function run(): Promise<void> {
     }
 
     core.debug(`Found ${screenshots.length} screenshots`);
-
     core.debug("Sending initial slack message");
+
     const result = await slack.chat.postMessage({
-      blocks: [
+      attachments: [
         {
-          type: "context",
-          elements: [
-            {
-              type: "image",
-              image_url: avatarUrl,
-              alt_text: "Github avatar",
-            },
-            {
-              type: "mrkdwn",
-              text: userName,
-            },
-          ],
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: messageText,
-          },
+          fallback: messageText,
+          author_name: user.login,
+          author_link: user.html_url,
+          author_icon: user.avatar_url,
+          color: "#6e6e6e",
+          title: prInfo.title,
+          title_link: prInfo.url,
+          text: messageText,
         },
       ],
       channel: channels,
@@ -89,8 +70,6 @@ async function run(): Promise<void> {
 
     const threadId = result.ts as string;
     const channelId = result.channel as string;
-
-    console.log("threadId :>> ", threadId);
 
     if (screenshots.length > 0) {
       core.debug("Uploading screenshots...");
@@ -139,26 +118,17 @@ async function getPrInfo(
   octokit: InstanceType<typeof GitHub>,
   context: Context
 ) {
-  if (!context.payload.pull_request?.number) return "";
+  if (!context.payload.pull_request?.number) return { title: "", url: "" };
 
   const { data: pullRequest } = await octokit.rest.pulls.get({
     owner: context.repo.owner,
     repo: context.repo.repo,
     pull_number: context.payload.pull_request.number,
   });
-  const prTitle = pullRequest.title;
-  const prUrl = pullRequest.html_url;
+  const title = pullRequest.title;
+  const url = pullRequest.html_url;
 
-  return `🚀 <${prUrl}|${prTitle}> 🚀`;
-}
-
-function getWorkflowInfo(context: Context) {
-  const workflowRunId = context.runId;
-  const repoName = context.repo.repo;
-  const repoOwner = context.repo.owner;
-  const workflowUrl = `https://github.com/${repoOwner}/${repoName}/actions/runs/${workflowRunId}`;
-
-  return workflowUrl;
+  return { title, url };
 }
 
 run();
