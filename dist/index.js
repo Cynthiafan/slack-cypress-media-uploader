@@ -52,35 +52,32 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const context = github.context;
-            const token = core.getInput("token");
-            const channels = core.getInput("channels");
-            const workdir = core.getInput("workdir") || "e2e/cypress";
-            const githubToken = core.getInput("github-token");
+            const token = core.getInput('token');
+            const channels = core.getInput('channels');
+            const workdir = core.getInput('workdir') || 'e2e/cypress';
+            const githubToken = core.getInput('github-token');
+            const color = core.getInput('color') || '#6e6e6e';
             const octokit = github.getOctokit(githubToken);
             const prInfo = yield getPrInfo(octokit, context);
-            const messageText = core.getInput("message-text") ||
-                ":oh_no: The Cypress test in the workflow you just triggered has failed.\nPlease check the screenshots in the thread.👇🏻";
+            const messageText = core.getInput('message-text') ||
+                ':oh_no: The Cypress test in the workflow you just triggered has failed.\nPlease check the screenshots in the thread.👇🏻';
             core.debug(`Token: ${token}`);
             core.debug(`Channels: ${channels}`);
             core.debug(`Message text: ${messageText}`);
             const actor = context.actor;
-            const { data: user } = yield octokit.rest.users.getByUsername({
-                username: actor,
-            });
-            core.debug("Start initializing slack SDK");
+            const { data: user } = yield octokit.rest.users.getByUsername({ username: actor });
+            core.debug('Start initializing slack SDK');
             const slack = new web_api_1.WebClient(token);
-            core.debug("Slack SDK initialized successfully");
-            core.debug("Checking for videos and/or screenshots from cypress");
-            const screenshots = (0, walk_sync_1.default)(workdir, {
-                globs: ["**/*.png", "**/*.jpg", "**/*.jpeg"],
-            });
-            if (screenshots.length <= 0) {
-                core.debug("No videos or screenshots found. Exiting!");
-                core.setOutput("result", "No videos or screenshots found!");
+            core.debug('Slack SDK initialized successfully');
+            const screenshots = (0, walk_sync_1.default)(workdir, { globs: ['**/*.png'] });
+            const videos = (0, walk_sync_1.default)(workdir, { globs: ['**/*.mp4'] });
+            if (!screenshots.length && !videos.length) {
+                core.debug('No screenshots or videos found. Exiting...');
+                core.setOutput('result', 'No screenshots or videos found.');
                 return;
             }
-            core.debug(`Found ${screenshots.length} screenshots`);
-            core.debug("Sending initial slack message");
+            core.debug(`Found ${screenshots.length} screenshots and ${videos.length} videos`);
+            core.debug('Sending Slack message');
             const result = yield slack.chat.postMessage({
                 attachments: [
                     {
@@ -88,43 +85,35 @@ function run() {
                         author_name: user.login,
                         author_link: user.html_url,
                         author_icon: user.avatar_url,
-                        color: "#6e6e6e",
+                        color,
                         title: prInfo.title,
                         title_link: prInfo.url,
-                        text: messageText,
-                    },
+                        text: messageText
+                    }
                 ],
-                channel: channels,
+                channel: channels
             });
             const threadId = result.ts;
             const channelId = result.channel;
+            if (!threadId || !channelId) {
+                core.debug('No threadId or channelId from the postMessage response.. Exiting...');
+                core.setOutput('result', 'No threadId or channelId from the postMessage response.');
+                return;
+            }
             if (screenshots.length > 0) {
-                core.debug("Uploading screenshots...");
+                core.debug('Uploading screenshots...');
                 yield Promise.all(screenshots.map((screenshot) => __awaiter(this, void 0, void 0, function* () {
-                    core.debug(`Uploading ${screenshot}`);
-                    const filePath = `${workdir}/${screenshot}`;
-                    const stats = (0, fs_1.statSync)(filePath);
-                    const fileSizeInBytes = stats.size;
-                    const { upload_url, file_id } = yield slack.files.getUploadURLExternal({
-                        filename: screenshot,
-                        length: fileSizeInBytes,
-                    });
-                    if (!upload_url || !file_id) {
-                        throw new Error("Could not get upload URL");
-                    }
-                    const file = (0, fs_1.createReadStream)(filePath);
-                    yield axios_1.default.post(upload_url, file, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    slack.files.completeUploadExternal({
-                        channel_id: channelId,
-                        thread_ts: threadId,
-                        files: [{ id: file_id, title: screenshot }],
-                    });
+                    yield uploadMedia(slack, { media: screenshot, workdir, channelId, threadId, token });
                 })));
             }
-            core.debug("...done!");
-            core.setOutput("result", "🚀🚀🚀🚀🚀");
+            if (videos.length > 0) {
+                core.debug('Uploading videos...');
+                yield Promise.all(screenshots.map((video) => __awaiter(this, void 0, void 0, function* () {
+                    yield uploadMedia(slack, { media: video, workdir, channelId, threadId, token });
+                })));
+            }
+            core.debug('...done!');
+            core.setOutput('result', '🚀🚀🚀🚀🚀');
         }
         catch (error) {
             core.setFailed(error.message);
@@ -135,15 +124,41 @@ function getPrInfo(octokit, context) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         if (!((_a = context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number))
-            return { title: "", url: "" };
+            return { title: '', url: '' };
         const { data: pullRequest } = yield octokit.rest.pulls.get({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            pull_number: context.payload.pull_request.number,
+            pull_number: context.payload.pull_request.number
         });
         const title = pullRequest.title;
         const url = pullRequest.html_url;
         return { title, url };
+    });
+}
+function uploadMedia(slack_1, _a) {
+    return __awaiter(this, arguments, void 0, function* (slack, { token, media, workdir, channelId, threadId }) {
+        core.debug(`Uploading ${media}`);
+        const filePath = `${workdir}/${media}`;
+        const stats = (0, fs_1.statSync)(filePath);
+        const fileSizeInBytes = stats.size;
+        const { upload_url, file_id } = yield slack.files.getUploadURLExternal({
+            filename: media,
+            length: fileSizeInBytes
+        });
+        if (!upload_url || !file_id) {
+            core.debug('No upload_url or file_id from the getUploadURLExternal response. Exiting...');
+            core.setOutput('result', 'No upload_url or file_id from the getUploadURLExternal response.');
+            return;
+        }
+        const file = (0, fs_1.createReadStream)(filePath);
+        yield axios_1.default.post(upload_url, file, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        slack.files.completeUploadExternal({
+            channel_id: channelId,
+            thread_ts: threadId,
+            files: [{ id: file_id, title: media }]
+        });
     });
 }
 run();
