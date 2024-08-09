@@ -1,29 +1,31 @@
 name: 'Slack Cypress Media Uploader'
 description: 'Upload the screenshots and/or videos to the Slack channels if Cypress failed.'
-icon: 'message-circle'
-color: 'yellow'
+author: Cynthiafan
+branding:
+  icon: 'message-circle'
+  color: 'yellow'
 inputs:
   token:
     description: 'Slack bot token'
     required: true
   github-token:
-    description: 'GitHub token to get pull request information'
+    description: 'GitHub token to access pull request information'
     required: true
   channels:
-    description: 'The channels to send the message to'
+    description: 'The Slack channels where the messages will be sent'
     required: true
   workdir:
-    description: 'The directory to store the screenshots'
+    description: 'The directory where screenshots/videos are stored.'
     required: false
-    default: 'e2e/cypress'
   message-text:
-    description: 'The message to send'
+    description: 'The message to be sent'
     required: false
   color:
     description: 'The color of the quote line'
+    required: false
 outputs:
   result:
-    description: 'Result of screenshots upload'
+    description: 'Result of screenshots/videos upload'
 runs:
   using: 'node20'
   main: 'dist/index.js'

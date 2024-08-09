@@ -13,7 +13,7 @@ async function run(): Promise<void> {
 
     const token = core.getInput('token')
     const channels = core.getInput('channels')
-    const workdir = core.getInput('workdir') || 'e2e/cypress'
+    const workdir = core.getInput('workdir') || 'cypress'
     const githubToken = core.getInput('github-token')
     const color = core.getInput('color') || '#6e6e6e'
 
@@ -23,7 +23,7 @@ async function run(): Promise<void> {
 
     const messageText =
       core.getInput('message-text') ||
-      ':oh_no: The Cypress test in the workflow you just triggered has failed.\nPlease check the screenshots in the thread.👇🏻'
+      'The Cypress test in the workflow you just triggered has failed.\nPlease check the screenshots in the thread.👇🏻'
 
     core.debug(`Token: ${token}`)
     core.debug(`Channels: ${channels}`)
