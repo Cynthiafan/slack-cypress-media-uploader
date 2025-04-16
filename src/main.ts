@@ -85,7 +85,7 @@ async function run(): Promise<void> {
     if (videos.length > 0) {
       core.debug('Uploading videos...')
       await Promise.all(
-        screenshots.map(async (video) => {
+        videos.map(async (video) => {
           await uploadMedia(slack, { media: video, workdir, channelId, threadId, token })
         })
       )
